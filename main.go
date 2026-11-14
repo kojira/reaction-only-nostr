@@ -87,7 +87,7 @@ func connect() {
 					subscribeReactions(ws)
 				}
 				if pubkey != "" {
-					send(ws, []any{"REQ", "emoji-set", map[string]any{"kinds": []int{30030}, "authors": []string{pubkey}, "#d": []string{"reaction-only"}}})
+					subscribeEmoji(ws)
 				}
 				status("接続: " + url)
 				return nil
@@ -113,6 +113,7 @@ func connect() {
 					if json.Unmarshal(msg[2], &ev) != nil || !verifyEvent(ev) {
 						return nil
 					}
+					handleEmojiEvent(ev, sub)
 					if ev.Kind == 3 && sub == fmt.Sprintf("follows-%d", followGeneration) && ev.Pubkey == pubkey && (!haveFollows || newer(ev, followEvent)) {
 						followEvent = ev
 						haveFollows = true
@@ -155,7 +156,9 @@ func connect() {
 				if typ == "OK" && len(msg) >= 3 {
 					var accepted bool
 					json.Unmarshal(msg[2], &accepted)
-					status(fmt.Sprintf("リレー応答 %s: 受理=%v", url, accepted))
+					if !accepted {
+						status("リレーが送信を拒否しました: " + url)
+					}
 				}
 				return nil
 			}))
@@ -373,6 +376,7 @@ func login(restore bool) {
 		reactionGeneration++
 		setTags = [][]string{{"d", "reaction-only"}}
 		setTime = 0
+		resetEmojiLists()
 		refreshSet()
 		renderAccount()
 		renderTimeline()
@@ -381,7 +385,7 @@ func login(restore bool) {
 		for _, ws := range sockets {
 			send(ws, []any{"CLOSE", fmt.Sprintf("follows-%d", followGeneration-1)})
 			subscribeFollows(ws)
-			send(ws, []any{"REQ", "emoji-set", map[string]any{"kinds": []int{30030}, "authors": []string{pubkey}, "#d": []string{"reaction-only"}}})
+			subscribeEmoji(ws)
 		}
 		status("ログインしました")
 		return nil
@@ -441,7 +445,8 @@ func publishReaction(id, p, content, shortcode, url string) {
 		for _, ws := range sockets {
 			send(ws, []any{"EVENT", signedToMap(raw)})
 		}
-		status("送信しました。リレーの受理応答を待っています")
+		rememberEmoji(content, shortcode, url)
+		status("送信しました")
 	})
 }
 func signedToMap(s string) any { var v any; json.Unmarshal([]byte(s), &v); return v }
