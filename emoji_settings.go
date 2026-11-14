@@ -10,7 +10,7 @@ import (
 
 const emojiStorageKey = "reaction-only-default-emojis-v1"
 
-var defaultEmojis = []string{"❤️", "👍", "😂", "🎉", "😮"}
+var defaultEmojis = initialDefaultEmojis()
 
 func loadDefaultEmojis() {
 	// Storage access may be blocked by browser privacy settings.
