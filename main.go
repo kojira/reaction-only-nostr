@@ -263,8 +263,10 @@ func render(ev Event, depth int, missing, cycle bool) {
 		notice.Set("textContent", "参照の循環を検出")
 		card.Call("appendChild", notice)
 	}
-	line := doc.Call("createElement", "div")
+	line := doc.Call("createElement", "button")
 	line.Set("className", "reaction")
+	line.Set("type", "button")
+	line.Call("setAttribute", "aria-label", "リアクションを拡大表示")
 	custom := false
 	for _, t := range ev.Tags {
 		if len(t) >= 3 && t[0] == "emoji" && ev.Content == ":"+t[1]+":" && strings.HasPrefix(t[2], "https://") {

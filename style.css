@@ -26,9 +26,7 @@ button[hidden]{display:none}
 .parent-emoji{width:1.5em;height:1.5em;object-fit:contain;vertical-align:middle}
 
 #feed > article { cursor: pointer; }
-#feed > article:focus-visible { outline: 3px solid #76558a; outline-offset: 2px; }
-#cardDialog { box-sizing: border-box; width: min(42rem, calc(100% - 2rem)); max-width: none; max-height: 90dvh; overflow: auto; border: 0; border-radius: 20px; padding: 1rem; background: #fff; }
-#cardDialog::backdrop { background: rgba(0,0,0,.6); }
-#closeCardDialog { display: block; margin-left: auto; }
-#expandedCard > article { margin: .75rem 0 0 !important; cursor: auto; }
-@media (max-width: 600px) { #cardDialog { width: 100%; max-width: 100%; border-radius: 16px; } }
+
+button.reaction{display:block;text-align:left;border:0;padding:0;background:transparent;color:inherit;cursor:zoom-in;max-width:100%;font:inherit;font-size:2rem;line-height:1.25;overflow-wrap:anywhere}button.reaction:hover{background:transparent}button.reaction:focus-visible{outline:2px solid #6750a4;outline-offset:4px}
+#reactionViewer{box-sizing:border-box;width:min(100vw,720px);max-width:100vw;max-height:100dvh;margin:auto;padding:1rem;border:0;border-radius:16px;background:#fff;color:#1d192b}#reactionViewer::backdrop{background:rgba(0,0,0,.72)}#reactionViewerClose{display:block;margin-left:auto}#reactionViewerContent{display:flex;align-items:center;justify-content:center;min-height:35vh;max-height:75dvh;overflow:auto;overflow-wrap:anywhere;word-break:break-word;white-space:pre-wrap;text-align:center;font-size:clamp(3rem,16vw,8rem);line-height:1.2}#reactionViewerContent img{display:block;width:100%;max-height:70dvh;object-fit:contain}
+@media(max-width:720px){#reactionViewer{width:100vw;border-radius:0}}
