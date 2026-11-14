@@ -14,3 +14,16 @@ func TestValidEmoji(t *testing.T) {
 		}
 	}
 }
+
+func TestKeycapEmoji(t *testing.T) {
+	for _, s := range []string{"1️⃣", "#️⃣", "*⃣"} {
+		if !validEmoji(s) {
+			t.Errorf("keycap %q rejected", s)
+		}
+	}
+	for _, s := range []string{"1", "12️⃣", "1️"} {
+		if validEmoji(s) {
+			t.Errorf("invalid keycap %q accepted", s)
+		}
+	}
+}

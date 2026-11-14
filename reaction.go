@@ -10,6 +10,12 @@ func validEmoji(s string) bool {
 	if len(r) == 0 || len(r) > 32 {
 		return false
 	}
+	// Unicode keycap sequences (e.g. 1️⃣, #️⃣ and *️⃣).
+	if len(r) == 2 || len(r) == 3 {
+		if (r[0] >= '0' && r[0] <= '9' || r[0] == '#' || r[0] == '*') && r[len(r)-1] == 0x20e3 && (len(r) == 2 || r[1] == 0xfe0f) {
+			return true
+		}
+	}
 	bases := 0
 	joined := false
 	for i, c := range r {
