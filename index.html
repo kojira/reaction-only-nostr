@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#f7f2fa">
   <title>Reaction Only</title>
-  <link rel="stylesheet" href="style.css?v=7745add-parent">
+  <link rel="stylesheet" href="style.css?v=card-modal-1">
 </head>
 <body>
 <header class="appbar"><button id="menuToggle" class="menu-toggle" type="button" aria-label="メニューを開く" aria-controls="menuPanel" aria-expanded="false">☰</button><span class="app-icon" aria-hidden="true">✦</span><span>Reaction Only</span><div id="account" class="account" hidden aria-label="ログイン中"><span id="accountAvatar" class="avatar" aria-hidden="true">👤</span><span id="accountName" hidden></span></div></header>
@@ -34,5 +34,6 @@
   </aside>
   <section class="timeline"><h2>リアクション</h2><p id="feedState" role="status"></p><div id="feed"></div></section>
 </main>
-<script src="settings.js"></script><script src="wasm_exec.js"></script><script src="image.js"></script><script src="boot.js?v=7745add-parent"></script>
+<dialog id="cardDialog" aria-label="リアクション詳細"><button type="button" id="closeCardDialog" aria-label="閉じる">閉じる ×</button><div id="expandedCard"></div></dialog>
+<script src="card-modal.js?v=card-modal-1"></script><script src="settings.js"></script><script src="wasm_exec.js"></script><script src="image.js"></script><script src="boot.js?v=7745add-parent"></script>
 </body></html>

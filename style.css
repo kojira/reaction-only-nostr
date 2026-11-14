@@ -24,3 +24,11 @@ button[hidden]{display:none}
 .parent{border-left:3px solid #b9a1d5;margin:.5rem 0;padding:.5rem .75rem;background:#fff9;border-radius:0 10px 10px 0;min-width:0;overflow-wrap:anywhere}.parent-content{white-space:pre-wrap;max-height:12rem;overflow:auto}.parent button{font-size:.8rem;min-height:44px;padding:.4rem .7rem;margin-top:.3rem}.parent .parent{margin-left:.3rem}
 
 .parent-emoji{width:1.5em;height:1.5em;object-fit:contain;vertical-align:middle}
+
+#feed > article { cursor: pointer; }
+#feed > article:focus-visible { outline: 3px solid #76558a; outline-offset: 2px; }
+#cardDialog { box-sizing: border-box; width: min(42rem, calc(100% - 2rem)); max-width: none; max-height: 90dvh; overflow: auto; border: 0; border-radius: 20px; padding: 1rem; background: #fff; }
+#cardDialog::backdrop { background: rgba(0,0,0,.6); }
+#closeCardDialog { display: block; margin-left: auto; }
+#expandedCard > article { margin: .75rem 0 0 !important; cursor: auto; }
+@media (max-width: 600px) { #cardDialog { width: 100%; max-width: 100%; border-radius: 16px; } }
