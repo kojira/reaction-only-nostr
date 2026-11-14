@@ -75,6 +75,7 @@ func connect() {
 				if generation != connectionGeneration {
 					return nil
 				}
+				subscribeParents(ws)
 				for key := range requestedProfiles {
 					send(ws, []any{"REQ", profileSubscriptionID(key), map[string]any{"kinds": []int{0}, "authors": []string{key}, "limit": 1}})
 				}
@@ -114,6 +115,9 @@ func connect() {
 						return nil
 					}
 					handleEmojiEvent(ev, sub)
+					if receiveParent(sub, ev) {
+						renderTimeline()
+					}
 					if ev.Kind == 3 && sub == fmt.Sprintf("follows-%d", followGeneration) && ev.Pubkey == pubkey && (!haveFollows || newer(ev, followEvent)) {
 						followEvent = ev
 						haveFollows = true
@@ -149,6 +153,7 @@ func connect() {
 					if ev.Kind == 7 && sub == fmt.Sprintf("reactions-%d", reactionGeneration) && follows[ev.Pubkey] && validHex(ev.ID, 64) && validHex(ev.Pubkey, 64) && !seen[ev.ID] {
 						seen[ev.ID] = true
 						timeline = append(timeline, ev)
+						requestParent(reactionParent(ev))
 						requestProfile(ev.Pubkey)
 						renderTimeline()
 					}
@@ -293,6 +298,7 @@ func render(ev Event, depth int, missing, cycle bool) {
 	meta.Set("textContent", pinfo.Name+" · "+time.Unix(ev.CreatedAt, 0).Local().Format("2006-01-02 15:04:05"))
 	card.Call("appendChild", meta)
 	card.Call("appendChild", line)
+	renderParent(card, ev)
 	actions := doc.Call("createElement", "div")
 	actions.Set("className", "actions")
 	buildReactionActions(actions, ev)
