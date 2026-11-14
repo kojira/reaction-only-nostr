@@ -2,7 +2,7 @@
   const menu = document.getElementById('menuPanel');
   const toggle = document.getElementById('menuToggle');
   const select = document.getElementById('fontSize');
-  const sizes = {small: '87.5%', medium: '100%', large: '112.5%', 'extra-large': '125%'};
+  const sizes = {'extra-small': '62.5%', smaller: '75%', small: '87.5%', medium: '100%', large: '112.5%', 'extra-large': '125%'};
   let saved;
   try { saved = localStorage.getItem('reaction-only-font-size'); } catch (_) {}
   select.value = Object.hasOwn(sizes, saved) ? saved : 'medium';

@@ -8,15 +8,15 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header class="appbar"><button id="menuToggle" class="menu-toggle" type="button" aria-label="メニューを開く" aria-controls="menuPanel" aria-expanded="false">☰</button><span class="app-icon" aria-hidden="true">✦</span><span>Reaction Only</span></header>
+<header class="appbar"><button id="menuToggle" class="menu-toggle" type="button" aria-label="メニューを開く" aria-controls="menuPanel" aria-expanded="false">☰</button><span class="app-icon" aria-hidden="true">✦</span><span>Reaction Only</span><div id="account" class="account" hidden aria-label="ログイン中"><span id="accountAvatar" class="avatar" aria-hidden="true">👤</span><span id="accountName" hidden></span></div></header>
 <main>
   
-  <div class="account-card">
-    <div><span class="eyebrow">CONNECTION</span><p id="status" role="status">Goを読み込み中…</p><div id="account" class="account" hidden><span id="accountAvatar" class="avatar" aria-hidden="true">👤</span><span><strong id="accountName"></strong></span></div></div>
+  <div id="connectionCard" class="account-card">
+    <div><p id="status" role="status">Goを読み込み中…</p></div>
     <button id="login">NIP-07でログイン</button>
   </div>
   <aside id="menuPanel" class="settings" hidden aria-label="メニュー">
-  <label for="fontSize">文字サイズ</label><select id="fontSize"><option value="small">小</option><option value="medium">中</option><option value="large">大</option><option value="extra-large">特大</option></select>
+  <label for="fontSize">文字サイズ</label><select id="fontSize"><option value="extra-small">極小</option><option value="smaller">より小</option><option value="small">小</option><option value="medium">中</option><option value="large">大</option><option value="extra-large">特大</option></select>
   <details><summary>よく使う絵文字</summary>
     <label for="defaultEmojis">絵文字（空白区切り）</label>
     <input id="defaultEmojis" autocomplete="off" placeholder="❤️ 👍 🎉 😮">
