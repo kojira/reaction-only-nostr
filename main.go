@@ -446,7 +446,6 @@ func publishReaction(id, p, content, shortcode, url string) {
 			send(ws, []any{"EVENT", signedToMap(raw)})
 		}
 		rememberEmoji(content, shortcode, url)
-		status("送信しました")
 	})
 }
 func signedToMap(s string) any { var v any; json.Unmarshal([]byte(s), &v); return v }
