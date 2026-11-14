@@ -327,6 +327,7 @@ func render(ev Event, depth int, missing, cycle bool) {
 }
 func renderAccount() {
 	el("account").Set("hidden", pubkey == "")
+	el("login").Set("hidden", pubkey != "")
 	if pubkey == "" {
 		return
 	}
@@ -348,7 +349,6 @@ func renderAccount() {
 			return nil
 		}))
 	}
-	el("login").Set("textContent", "アカウントを切り替え")
 }
 func login() {
 	n := js.Global().Get("nostr")
