@@ -17,20 +17,15 @@
   </div>
   <details class="relay-settings"><summary>リレー設定</summary><p>接続先は以下の3つに固定されています。</p><ul><li>wss://r.kojira.io</li><li>wss://x.kojira.io</li><li>wss://n.kojira.io</li></ul><button id="connect">接続</button></details>
   <section class="compose">
-    <h2>リアクションを送る</h2><p>イベントIDと公開鍵を指定して送信します。</p>
-    <label>対象イベントID（64桁hex）<input id="targetEvent" autocomplete="off" spellcheck="false"></label>
-    <label>対象の公開鍵（64桁hex）<input id="targetPubkey" autocomplete="off" spellcheck="false"></label>
-    <label>通常絵文字（1つ）<input id="emoji" value="❤️" maxlength="64"></label>
+    <h2>カスタム絵文字の管理</h2><p>登録した絵文字は各リアクションから送れます。</p>
     <details><summary>カスタム絵文字（NIP-30）</summary>
       <label>ショートコード<input id="shortcode" placeholder="party_parrot" spellcheck="false"></label>
       <label>画像のHTTPS URL<input id="emojiURL" type="url" placeholder="https://example.com/emoji.png"></label>
-      <p>入力すると通常絵文字より優先されます。</p>
       <label>画像にする文字<input id="imageText" maxlength="8" placeholder="🌸"></label>
       <button type="button" id="generate">文字から画像を生成して公開</button>
       <p>生成画像はBlossomサーバーに公開されます。アップロード承認にNIP-07署名を使用します。</p>
       <button id="register" type="button">自分の絵文字セットに登録</button><div id="emojiSet"></div>
     </details>
-    <button id="publish">リアクションを署名して公開</button>
   </section>
   <section class="timeline"><h2>リアクション</h2><p>署名検証済みのリアクションを会話ツリーで表示します。親が未取得の場合は明示します。各リアクションに、下の絵文字ボタンからリアクションを送れます。文章の返信はありません。</p><div id="feed"></div></section>
 </main>

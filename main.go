@@ -218,6 +218,19 @@ func render(ev Event, depth int, missing, cycle bool) {
 		b.Call("addEventListener", "click", callback(func(_ js.Value, _ []js.Value) any { publishReaction(ev.ID, ev.Pubkey, emoji, "", ""); return nil }))
 		actions.Call("appendChild", b)
 	}
+	customInput := doc.Call("createElement", "input")
+	customInput.Set("className", "emoji-input")
+	customInput.Set("placeholder", "絵文字を入力")
+	customInput.Set("ariaLabel", "このリアクションに送る通常絵文字")
+	customInput.Set("maxLength", 64)
+	actions.Call("appendChild", customInput)
+	customButton := doc.Call("createElement", "button")
+	customButton.Set("textContent", "入力した絵文字を送る")
+	customButton.Call("addEventListener", "click", callback(func(_ js.Value, _ []js.Value) any {
+		publishReaction(ev.ID, ev.Pubkey, strings.TrimSpace(customInput.Get("value").String()), "", "")
+		return nil
+	}))
+	actions.Call("appendChild", customButton)
 	for _, t := range setTags {
 		if len(t) >= 3 && t[0] == "emoji" && safeHTTPS(t[2]) {
 			tag := append([]string(nil), t...)
@@ -250,9 +263,6 @@ func login() {
 		}
 		status("ログインしました")
 	})
-}
-func publish() {
-	publishReaction(value("targetEvent"), value("targetPubkey"), value("emoji"), value("shortcode"), value("emojiURL"))
 }
 func publishReaction(id, p, content, shortcode, url string) {
 	if pubkey == "" {
@@ -311,7 +321,6 @@ func main() {
 	listen("connect", "click", func(_ js.Value, _ []js.Value) any { connect(); return nil })
 	listen("login", "click", func(_ js.Value, _ []js.Value) any { login(); return nil })
 	listen("register", "click", func(_ js.Value, _ []js.Value) any { registerSet(); return nil })
-	listen("publish", "click", func(_ js.Value, _ []js.Value) any { publish(); return nil })
 	connect()
 	status("起動しました")
 	select {}
