@@ -3,6 +3,8 @@
 package main
 
 import (
+	"crypto/sha256"
+	"fmt"
 	"strings"
 	"syscall/js"
 )
@@ -18,9 +20,13 @@ func subscribeEmoji(ws js.Value) {
 		subscribeEmojiRef(ws, a)
 	}
 }
+func emojiRefID(a string) string {
+	sum := sha256.Sum256([]byte(a))
+	return fmt.Sprintf("em-%x", sum[:12])
+}
 func subscribeEmojiRef(ws js.Value, a string) {
 	p := strings.SplitN(a, ":", 3)
-	send(ws, []any{"REQ", "emoji-ref-" + a, map[string]any{"kinds": []int{30030}, "authors": []string{p[1]}, "#d": []string{p[2]}, "limit": 1}})
+	send(ws, []any{"REQ", emojiRefID(a), map[string]any{"kinds": []int{30030}, "authors": []string{p[1]}, "#d": []string{p[2]}, "limit": 1}})
 }
 func handleEmojiEvent(ev Event, sub string) {
 	if sub == "emoji-list" && ev.Kind == 10030 && ev.Pubkey == pubkey && (emojiList.ID == "" || newer(ev, emojiList)) {
@@ -33,11 +39,11 @@ func handleEmojiEvent(ev Event, sub string) {
 		}
 		return
 	}
-	if ev.Kind != 30030 || !strings.HasPrefix(sub, "emoji-ref-") {
+	if ev.Kind != 30030 || !strings.HasPrefix(sub, "em-") {
 		return
 	}
 	a := "30030:" + ev.Pubkey + ":" + emojiAddress(ev.Tags)
-	if sub != "emoji-ref-"+a {
+	if sub != emojiRefID(a) {
 		return
 	}
 	found := false
