@@ -57,6 +57,7 @@ func connect() {
 	connectionGeneration++
 	generation := connectionGeneration
 	followDone = map[string]bool{}
+	renderTimeline()
 	for _, s := range sockets {
 		s.Call("close")
 	}
@@ -289,9 +290,6 @@ func render(ev Event, depth int, missing, cycle bool) {
 	card.Call("appendChild", meta)
 	actions := doc.Call("createElement", "div")
 	actions.Set("className", "actions")
-	label := doc.Call("createElement", "span")
-	label.Set("textContent", "このリアクションに送る: ")
-	actions.Call("appendChild", label)
 	for _, emoji := range []string{"❤️", "👍", "😂", "🎉", "😮"} {
 		emoji := emoji
 		b := doc.Call("createElement", "button")
@@ -307,7 +305,8 @@ func render(ev Event, depth int, missing, cycle bool) {
 	customInput.Set("maxLength", 64)
 	actions.Call("appendChild", customInput)
 	customButton := doc.Call("createElement", "button")
-	customButton.Set("textContent", "入力した絵文字を送る")
+	customButton.Set("textContent", "➤")
+	customButton.Set("ariaLabel", "入力した絵文字を送る")
 	customButton.Call("addEventListener", "click", callback(func(_ js.Value, _ []js.Value) any {
 		publishReaction(ev.ID, ev.Pubkey, strings.TrimSpace(customInput.Get("value").String()), "", "")
 		return nil

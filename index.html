@@ -22,9 +22,9 @@
       <label>ショートコード<input id="shortcode" placeholder="party_parrot" spellcheck="false"></label>
       <label>画像のHTTPS URL<input id="emojiURL" type="url" placeholder="https://example.com/emoji.png"></label>
       <label>画像にする文字<input id="imageText" maxlength="8" placeholder="🌸"></label>
-      <button type="button" id="generate">文字から画像を生成して公開</button>
+      <button type="button" id="generate" aria-label="文字から画像を生成してBlossomに公開（NIP-07署名が必要）">画像を公開</button>
       
-      <button id="register" type="button">自分の絵文字セットに登録</button><div id="emojiSet"></div>
+      <button id="register" type="button">登録</button><div id="emojiSet"></div>
     </details>
   </section>
   <section class="timeline"><h2>リアクション</h2><p id="feedState" role="status"></p><div id="feed"></div></section>
