@@ -12,3 +12,5 @@ button[hidden]{display:none}
 .settings{background:#fff;border-radius:24px;padding:1rem 1.5rem;margin:1rem 0;box-shadow:0 1px 3px #1d1b201c}.settings .relay-settings{box-shadow:none;background:#f7f2fa;border-radius:16px;padding:1rem}.settings>summary{font-size:1.1rem}
 
 .account .avatar{flex:0 0 2.5em;aspect-ratio:1}
+
+.appbar{display:flex;align-items:center;gap:.75rem}.menu-toggle{min-width:44px;padding:.4rem;background:transparent;color:#1d1b20;font-size:1.5rem}.menu-toggle:hover{background:#eaddff}.settings{position:fixed;z-index:10;top:4.8rem;left:1rem;width:min(24rem,calc(100vw - 2rem));max-height:calc(100dvh - 6rem);overflow:auto;margin:0}.settings[hidden]{display:none}select{font:inherit;min-height:44px;width:100%;padding:.5rem}.settings label{margin-bottom:.3rem}
