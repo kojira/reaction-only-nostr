@@ -290,7 +290,7 @@ func render(ev Event, depth int, missing, cycle bool) {
 	card.Call("appendChild", meta)
 	actions := doc.Call("createElement", "div")
 	actions.Set("className", "actions")
-	for _, emoji := range []string{"❤️", "👍", "😂", "🎉", "😮"} {
+	for _, emoji := range defaultEmojis {
 		emoji := emoji
 		b := doc.Call("createElement", "button")
 		b.Set("textContent", emoji)
@@ -445,6 +445,8 @@ func publishReaction(id, p, content, shortcode, url string) {
 }
 func signedToMap(s string) any { var v any; json.Unmarshal([]byte(s), &v); return v }
 func main() {
+	loadDefaultEmojis()
+	listen("saveEmojis", "click", func(_ js.Value, _ []js.Value) any { saveDefaultEmojis(); return nil })
 	listen("connect", "click", func(_ js.Value, _ []js.Value) any { connect(); return nil })
 	listen("login", "click", func(_ js.Value, _ []js.Value) any { login(); return nil })
 	listen("register", "click", func(_ js.Value, _ []js.Value) any { registerSet(); return nil })
