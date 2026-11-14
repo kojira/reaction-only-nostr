@@ -71,13 +71,13 @@ func connect() {
 					return nil
 				}
 				for key := range requestedProfiles {
-					send(ws, []any{"REQ", "profile-" + key, map[string]any{"kinds": []int{0}, "authors": []string{key}, "limit": 1}})
+					send(ws, []any{"REQ", profileSubscriptionID(key), map[string]any{"kinds": []int{0}, "authors": []string{key}, "limit": 1}})
 				}
 				for _, ev := range timeline {
-					send(ws, []any{"REQ", "profile-" + ev.Pubkey, map[string]any{"kinds": []int{0}, "authors": []string{ev.Pubkey}, "limit": 1}})
+					send(ws, []any{"REQ", profileSubscriptionID(ev.Pubkey), map[string]any{"kinds": []int{0}, "authors": []string{ev.Pubkey}, "limit": 1}})
 				}
 				if pubkey != "" {
-					send(ws, []any{"REQ", "profile-" + pubkey, map[string]any{"kinds": []int{0}, "authors": []string{pubkey}, "limit": 1}})
+					send(ws, []any{"REQ", profileSubscriptionID(pubkey), map[string]any{"kinds": []int{0}, "authors": []string{pubkey}, "limit": 1}})
 					subscribeFollows(ws)
 					subscribeReactions(ws)
 				}
@@ -192,7 +192,7 @@ func requestProfile(key string) {
 	}
 	requestedProfiles[key] = true
 	for _, ws := range sockets {
-		send(ws, []any{"REQ", "profile-" + key, map[string]any{"kinds": []int{0}, "authors": []string{key}, "limit": 1}})
+		send(ws, []any{"REQ", profileSubscriptionID(key), map[string]any{"kinds": []int{0}, "authors": []string{key}, "limit": 1}})
 	}
 }
 func validHex(s string, n int) bool {
