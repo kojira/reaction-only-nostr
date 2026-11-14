@@ -22,3 +22,5 @@ button[hidden]{display:none}
 .emoji-choices:not([hidden]) { display: flex; flex-wrap: wrap; gap: .25rem; width: 100%; }
 .actions{justify-content:flex-end}.emoji-choices:not([hidden]){display:block;width:100%;max-width:100%;overflow:hidden}.emoji-tabs{display:flex;overflow-x:auto;gap:.25rem;padding:.25rem 0}.emoji-tabs button{flex:none;font-size:.8rem}.emoji-tabs button[aria-pressed=true]{background:#b9a1d5}.emoji-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(44px,1fr));gap:.2rem;max-height:240px;overflow:auto}.emoji-grid button{min-width:44px;min-height:44px;padding:.3rem;font-size:1.3rem}.emoji-grid img{width:2rem;height:2rem;object-fit:contain}
 .parent{border-left:3px solid #b9a1d5;margin:.5rem 0;padding:.5rem .75rem;background:#fff9;border-radius:0 10px 10px 0;min-width:0;overflow-wrap:anywhere}.parent-content{white-space:pre-wrap;max-height:12rem;overflow:auto}.parent button{font-size:.8rem;min-height:44px;padding:.4rem .7rem;margin-top:.3rem}.parent .parent{margin-left:.3rem}
+
+.parent-emoji{width:1.5em;height:1.5em;object-fit:contain;vertical-align:middle}

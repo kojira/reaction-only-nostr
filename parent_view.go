@@ -33,7 +33,7 @@ func renderParent(card js.Value, ev Event) {
 		box.Call("appendChild", meta)
 		content := doc.Call("createElement", "div")
 		content.Set("className", "parent-content")
-		content.Set("textContent", parent.Content)
+		renderParentContent(content, parent)
 		box.Call("appendChild", content)
 		if parent.Kind == 7 && reactionParent(parent) != "" {
 			if expandedParents[id] {
@@ -52,4 +52,25 @@ func renderParent(card js.Value, ev Event) {
 		}
 	}
 	card.Call("appendChild", box)
+}
+
+// Build DOM nodes rather than interpolating untrusted content into HTML.
+func renderParentContent(container js.Value, parent Event) {
+	for _, part := range parentEmojiParts(parent) {
+		if part.URL == "" {
+			container.Call("appendChild", doc.Call("createTextNode", part.Text))
+			continue
+		}
+		img := doc.Call("createElement", "img")
+		img.Set("className", "parent-emoji")
+		img.Set("alt", part.Text)
+		img.Set("title", part.Text)
+		img.Set("referrerPolicy", "no-referrer")
+		img.Call("addEventListener", "error", callback(func(_ js.Value, _ []js.Value) any {
+			img.Call("replaceWith", doc.Call("createTextNode", part.Text))
+			return nil
+		}))
+		img.Set("src", part.URL)
+		container.Call("appendChild", img)
+	}
 }
