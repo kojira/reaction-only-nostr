@@ -58,12 +58,7 @@ func connect() {
 		s.Call("close")
 	}
 	sockets = nil
-	urls := strings.FieldsFunc(value("relays"), func(r rune) bool { return r == '\n' || r == ',' || r == ' ' })
-	for _, u := range urls {
-		if !strings.HasPrefix(u, "wss://") {
-			status("wss:// リレーのみ使用できます")
-			continue
-		}
+	for _, u := range relayURLs {
 		func(url string) {
 			ws := js.Global().Get("WebSocket").New(url)
 			sockets = append(sockets, ws)
