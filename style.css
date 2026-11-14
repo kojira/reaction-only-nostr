@@ -19,3 +19,4 @@ button[hidden]{display:none}
 .account-card[hidden]{display:none}
 .appbar .account{margin:0 0 0 auto}
 .appbar .account .avatar{margin:0;width:2.5rem;height:2.5rem;flex-basis:2.5rem}
+.emoji-choices:not([hidden]) { display: flex; flex-wrap: wrap; gap: .25rem; width: 100%; }

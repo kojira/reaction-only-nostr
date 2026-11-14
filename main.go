@@ -272,7 +272,6 @@ func render(ev Event, depth int, missing, cycle bool) {
 	if !custom {
 		line.Set("textContent", ev.Content)
 	}
-	card.Call("appendChild", line)
 	meta := doc.Call("createElement", "small")
 	pinfo := parseProfile(profiles[ev.Pubkey].Content, ev.Pubkey)
 	avatar := doc.Call("createElement", "span")
@@ -290,40 +289,10 @@ func render(ev Event, depth int, missing, cycle bool) {
 	card.Call("appendChild", avatar)
 	meta.Set("textContent", pinfo.Name+" · "+time.Unix(ev.CreatedAt, 0).Local().Format("2006-01-02 15:04:05"))
 	card.Call("appendChild", meta)
+	card.Call("appendChild", line)
 	actions := doc.Call("createElement", "div")
 	actions.Set("className", "actions")
-	for _, emoji := range defaultEmojis {
-		emoji := emoji
-		b := doc.Call("createElement", "button")
-		b.Set("textContent", emoji)
-		b.Set("title", "このリアクションに "+emoji+" を送る")
-		b.Call("addEventListener", "click", callback(func(_ js.Value, _ []js.Value) any { publishReaction(ev.ID, ev.Pubkey, emoji, "", ""); return nil }))
-		actions.Call("appendChild", b)
-	}
-	customInput := doc.Call("createElement", "input")
-	customInput.Set("className", "emoji-input")
-	customInput.Set("placeholder", "絵文字を入力")
-	customInput.Set("ariaLabel", "このリアクションに送る通常絵文字")
-	customInput.Set("maxLength", 64)
-	actions.Call("appendChild", customInput)
-	customButton := doc.Call("createElement", "button")
-	customButton.Set("textContent", "➤")
-	customButton.Set("ariaLabel", "入力した絵文字を送る")
-	customButton.Call("addEventListener", "click", callback(func(_ js.Value, _ []js.Value) any {
-		publishReaction(ev.ID, ev.Pubkey, strings.TrimSpace(customInput.Get("value").String()), "", "")
-		return nil
-	}))
-	actions.Call("appendChild", customButton)
-	for _, t := range setTags {
-		if len(t) >= 3 && t[0] == "emoji" && safeHTTPS(t[2]) {
-			tag := append([]string(nil), t...)
-			b := doc.Call("createElement", "button")
-			b.Set("textContent", ":"+tag[1]+":")
-			b.Set("title", "このリアクションに :"+tag[1]+": を送る")
-			b.Call("addEventListener", "click", callback(func(_ js.Value, _ []js.Value) any { publishReaction(ev.ID, ev.Pubkey, "", tag[1], tag[2]); return nil }))
-			actions.Call("appendChild", b)
-		}
-	}
+	buildReactionActions(actions, ev)
 	card.Call("appendChild", actions)
 	el("feed").Call("appendChild", card)
 }
