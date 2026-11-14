@@ -160,6 +160,7 @@ func renderTimeline() {
 func render(ev Event, depth int, missing, cycle bool) {
 	card := doc.Call("createElement", "article")
 	card.Get("style").Set("marginLeft", fmt.Sprintf("%dem", min(depth, 8)))
+	card.Get("style").Call("setProperty", "--indent", fmt.Sprintf("%dem", min(depth, 8)))
 	if missing || cycle {
 		notice := doc.Call("createElement", "small")
 		if cycle {
