@@ -69,6 +69,7 @@ func connect() {
 					send(ws, []any{"REQ", "profile-" + ev.Pubkey, map[string]any{"kinds": []int{0}, "authors": []string{ev.Pubkey}, "limit": 1}})
 				}
 				if pubkey != "" {
+					send(ws, []any{"REQ", "profile-" + pubkey, map[string]any{"kinds": []int{0}, "authors": []string{pubkey}, "limit": 1}})
 					subscribeFollows(ws)
 					subscribeReactions(ws)
 				}
@@ -112,6 +113,9 @@ func connect() {
 						old, ok := profiles[ev.Pubkey]
 						if !ok || ev.CreatedAt > old.CreatedAt || ev.CreatedAt == old.CreatedAt && ev.ID < old.ID {
 							profiles[ev.Pubkey] = ev
+							if ev.Pubkey == pubkey {
+								renderAccount()
+							}
 							renderTimeline()
 						}
 					}
@@ -300,6 +304,31 @@ func render(ev Event, depth int, missing, cycle bool) {
 	card.Call("appendChild", actions)
 	el("feed").Call("appendChild", card)
 }
+func renderAccount() {
+	el("account").Set("hidden", pubkey == "")
+	if pubkey == "" {
+		return
+	}
+	p := parseProfile(profiles[pubkey].Content, pubkey)
+	text("accountName", p.Name)
+	text("accountKey", pubkey)
+	avatar := el("accountAvatar")
+	avatar.Set("textContent", "👤")
+	if p.Picture != "" {
+		img := doc.Call("createElement", "img")
+		img.Set("alt", "")
+		img.Set("src", p.Picture)
+		avatar.Set("textContent", "")
+		avatar.Call("appendChild", img)
+		img.Set("onerror", callback(func(_ js.Value, _ []js.Value) any {
+			if img.Get("parentNode").Equal(avatar) {
+				avatar.Set("textContent", "👤")
+			}
+			return nil
+		}))
+	}
+	el("login").Set("textContent", "アカウントを切り替え")
+}
 func login() {
 	n := js.Global().Get("nostr")
 	if n.IsUndefined() || n.IsNull() {
@@ -323,7 +352,10 @@ func login() {
 		setTags = [][]string{{"d", "reaction-only"}}
 		setTime = 0
 		refreshSet()
-		text("account", "ログイン: "+p)
+		renderAccount()
+		renderTimeline()
+		delete(requestedProfiles, p)
+		requestProfile(p)
 		for _, ws := range sockets {
 			subscribeFollows(ws)
 			send(ws, []any{"REQ", "emoji-set", map[string]any{"kinds": []int{30030}, "authors": []string{pubkey}, "#d": []string{"reaction-only"}}})
