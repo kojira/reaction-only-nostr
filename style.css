@@ -20,3 +20,4 @@ button[hidden]{display:none}
 .appbar .account{margin:0 0 0 auto}
 .appbar .account .avatar{margin:0;width:2.5rem;height:2.5rem;flex-basis:2.5rem}
 .emoji-choices:not([hidden]) { display: flex; flex-wrap: wrap; gap: .25rem; width: 100%; }
+.actions{justify-content:flex-end}.emoji-choices:not([hidden]){display:block;width:100%;max-width:100%;overflow:hidden}.emoji-tabs{display:flex;overflow-x:auto;gap:.25rem;padding:.25rem 0}.emoji-tabs button{flex:none;font-size:.8rem}.emoji-tabs button[aria-pressed=true]{background:#b9a1d5}.emoji-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(44px,1fr));gap:.2rem;max-height:240px;overflow:auto}.emoji-grid button{min-width:44px;min-height:44px;padding:.3rem;font-size:1.3rem}.emoji-grid img{width:2rem;height:2rem;object-fit:contain}
