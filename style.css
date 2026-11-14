@@ -14,3 +14,8 @@ button[hidden]{display:none}
 .account .avatar{flex:0 0 2.5em;aspect-ratio:1}
 
 .appbar{display:flex;align-items:center;gap:.75rem}.menu-toggle{min-width:44px;padding:.4rem;background:transparent;color:#1d1b20;font-size:1.5rem}.menu-toggle:hover{background:#eaddff}.settings{position:fixed;z-index:10;top:4.8rem;left:1rem;width:min(24rem,calc(100vw - 2rem));max-height:calc(100dvh - 6rem);overflow:auto;margin:0}.settings[hidden]{display:none}select{font:inherit;min-height:44px;width:100%;padding:.5rem}.settings label{margin-bottom:.3rem}
+
+/* Keep the account avatar at the far right without a connection card. */
+.account-card[hidden]{display:none}
+.appbar .account{margin:0 0 0 auto}
+.appbar .account .avatar{margin:0;width:2.5rem;height:2.5rem;flex-basis:2.5rem}

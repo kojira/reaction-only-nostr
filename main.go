@@ -39,7 +39,12 @@ func callback(f func(js.Value, []js.Value) any) js.Func {
 func listen(id, event string, f func(js.Value, []js.Value) any) {
 	el(id).Call("addEventListener", event, callback(f))
 }
-func status(s string) { text("status", s) }
+func status(s string) {
+	text("status", s)
+	// Routine connection updates should not create a large card after login.
+	quiet := strings.HasPrefix(s, "接続: ") || s == "ログインしました" || s == "起動しました"
+	el("connectionCard").Set("hidden", pubkey != "" && quiet)
+}
 func promise(p js.Value, ok func(js.Value)) {
 	p.Call("then", callback(func(_ js.Value, a []js.Value) any { ok(a[0]); return nil })).Call("catch", callback(func(_ js.Value, a []js.Value) any { status("エラー: " + a[0].String()); return nil }))
 }
@@ -325,6 +330,7 @@ func render(ev Event, depth int, missing, cycle bool) {
 func renderAccount() {
 	el("account").Set("hidden", pubkey == "")
 	el("login").Set("hidden", pubkey != "")
+	el("connectionCard").Set("hidden", pubkey != "")
 	if pubkey == "" {
 		return
 	}
