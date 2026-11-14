@@ -10,20 +10,20 @@
 <body>
 <header class="appbar"><div><span class="app-icon" aria-hidden="true">✦</span><span>Reaction Only</span></div></header>
 <main>
-  <div class="intro"><h1>リアクションで会話しよう</h1><p>言葉の代わりに、絵文字で気持ちを届けよう。</p></div>
+  <div class="intro"><h1>リアクションで会話しよう</h1></div>
   <div class="account-card">
     <div><span class="eyebrow">CONNECTION</span><p id="status" role="status">Goを読み込み中…</p><div id="account" class="account" hidden><span id="accountAvatar" class="avatar" aria-hidden="true">👤</span><span><strong id="accountName"></strong><small id="accountKey"></small></span></div></div>
     <button id="login">NIP-07でログイン</button>
   </div>
-  <details class="relay-settings"><summary>リレー設定</summary><p>接続先は以下の3つに固定されています。</p><ul><li>wss://r.kojira.io</li><li>wss://x.kojira.io</li><li>wss://n.kojira.io</li></ul><button id="connect">接続</button></details>
+  <details class="relay-settings"><summary>リレー設定</summary><ul><li>wss://r.kojira.io</li><li>wss://x.kojira.io</li><li>wss://n.kojira.io</li></ul><button id="connect">接続</button></details>
   <section class="compose">
-    <h2>カスタム絵文字の管理</h2><p>登録した絵文字は各リアクションから送れます。</p>
+    <h2>カスタム絵文字の管理</h2>
     <details><summary>カスタム絵文字（NIP-30）</summary>
       <label>ショートコード<input id="shortcode" placeholder="party_parrot" spellcheck="false"></label>
       <label>画像のHTTPS URL<input id="emojiURL" type="url" placeholder="https://example.com/emoji.png"></label>
       <label>画像にする文字<input id="imageText" maxlength="8" placeholder="🌸"></label>
       <button type="button" id="generate">文字から画像を生成して公開</button>
-      <p>生成画像はBlossomサーバーに公開されます。アップロード承認にNIP-07署名を使用します。</p>
+      
       <button id="register" type="button">自分の絵文字セットに登録</button><div id="emojiSet"></div>
     </details>
   </section>
