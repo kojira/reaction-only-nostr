@@ -23,8 +23,10 @@ var requestedProfiles = map[string]bool{}
 var follows map[string]bool
 var followEvent Event
 var haveFollows bool
-var followEOSE = map[string]bool{}
 var reactionGeneration int
+var connectionGeneration int
+var followGeneration int
+var followDone = map[string]bool{}
 
 func el(id string) js.Value  { return doc.Call("getElementById", id) }
 func value(id string) string { return strings.TrimSpace(el(id).Get("value").String()) }
@@ -52,17 +54,22 @@ func send(ws js.Value, v any) {
 	}
 }
 func connect() {
+	connectionGeneration++
+	generation := connectionGeneration
+	followDone = map[string]bool{}
 	for _, s := range sockets {
 		s.Call("close")
 	}
 	sockets = nil
-	requestedProfiles = map[string]bool{}
 	for _, u := range relayURLs {
 		func(url string) {
 			ws := js.Global().Get("WebSocket").New(url)
 			sockets = append(sockets, ws)
 			ws.Set("onopen", callback(func(_ js.Value, _ []js.Value) any {
-				for key := range profiles {
+				if generation != connectionGeneration {
+					return nil
+				}
+				for key := range requestedProfiles {
 					send(ws, []any{"REQ", "profile-" + key, map[string]any{"kinds": []int{0}, "authors": []string{key}, "limit": 1}})
 				}
 				for _, ev := range timeline {
@@ -80,6 +87,9 @@ func connect() {
 				return nil
 			}))
 			ws.Set("onmessage", callback(func(_ js.Value, a []js.Value) any {
+				if generation != connectionGeneration {
+					return nil
+				}
 				var msg []json.RawMessage
 				if json.Unmarshal([]byte(a[0].Get("data").String()), &msg) != nil || len(msg) < 2 {
 					return nil
@@ -88,8 +98,8 @@ func connect() {
 				json.Unmarshal(msg[0], &typ)
 				var sub string
 				json.Unmarshal(msg[1], &sub)
-				if typ == "EOSE" && sub == "follows" {
-					followEOSE[url] = true
+				if typ == "EOSE" && sub == fmt.Sprintf("follows-%d", followGeneration) {
+					followDone[url] = true
 					renderTimeline()
 				}
 				if typ == "EVENT" && len(msg) >= 3 {
@@ -97,7 +107,7 @@ func connect() {
 					if json.Unmarshal(msg[2], &ev) != nil || !verifyEvent(ev) {
 						return nil
 					}
-					if ev.Kind == 3 && sub == "follows" && ev.Pubkey == pubkey && (!haveFollows || newer(ev, followEvent)) {
+					if ev.Kind == 3 && sub == fmt.Sprintf("follows-%d", followGeneration) && ev.Pubkey == pubkey && (!haveFollows || newer(ev, followEvent)) {
 						followEvent = ev
 						haveFollows = true
 						follows = following(ev.Tags)
@@ -143,12 +153,24 @@ func connect() {
 				}
 				return nil
 			}))
-			ws.Set("onerror", callback(func(_ js.Value, _ []js.Value) any { status("接続エラー: " + url); return nil }))
+			ws.Set("onclose", callback(func(_ js.Value, _ []js.Value) any {
+				if generation == connectionGeneration {
+					followDone[url] = true
+					renderTimeline()
+				}
+				return nil
+			}))
+			ws.Set("onerror", callback(func(_ js.Value, _ []js.Value) any {
+				if generation == connectionGeneration {
+					status("接続エラー: " + url)
+				}
+				return nil
+			}))
 		}(u)
 	}
 }
 func subscribeFollows(ws js.Value) {
-	send(ws, []any{"REQ", "follows", map[string]any{"kinds": []int{3}, "authors": []string{pubkey}, "limit": 1}})
+	send(ws, []any{"REQ", fmt.Sprintf("follows-%d", followGeneration), map[string]any{"kinds": []int{3}, "authors": []string{pubkey}, "limit": 1}})
 }
 func subscribeReactions(ws js.Value) {
 	for i := 0; i < reactionGeneration; i++ {
@@ -201,8 +223,8 @@ func renderTimeline() {
 	el("feed").Set("textContent", "")
 	switch {
 	case pubkey == "":
-		text("feedState", "ログインするとフォロー中のリアクションを表示します。")
-	case !haveFollows && len(followEOSE) < len(relayURLs):
+		text("feedState", "ログインしてください。")
+	case !haveFollows && len(followDone) < len(relayURLs):
 		text("feedState", "フォロー一覧を取得中です。")
 	case !haveFollows:
 		text("feedState", "フォロー一覧を取得できませんでした。接続やリレーを確認してください。")
@@ -345,7 +367,13 @@ func login() {
 		haveFollows = false
 		follows = nil
 		followEvent = Event{}
-		followEOSE = map[string]bool{}
+		followDone = map[string]bool{}
+		for i, ws := range sockets {
+			if ws.Get("readyState").Int() > 1 {
+				followDone[relayURLs[i]] = true
+			}
+		}
+		followGeneration++
 		timeline = nil
 		seen = map[string]bool{}
 		reactionGeneration++
@@ -357,6 +385,7 @@ func login() {
 		delete(requestedProfiles, p)
 		requestProfile(p)
 		for _, ws := range sockets {
+			send(ws, []any{"CLOSE", fmt.Sprintf("follows-%d", followGeneration-1)})
 			subscribeFollows(ws)
 			send(ws, []any{"REQ", "emoji-set", map[string]any{"kinds": []int{30030}, "authors": []string{pubkey}, "#d": []string{"reaction-only"}}})
 		}
