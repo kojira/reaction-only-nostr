@@ -20,6 +20,11 @@ var setTags = [][]string{{"d", "reaction-only"}}
 var setTime int64
 var profiles = map[string]Event{}
 var requestedProfiles = map[string]bool{}
+var follows map[string]bool
+var followEvent Event
+var haveFollows bool
+var followEOSE = map[string]bool{}
+var reactionGeneration int
 
 func el(id string) js.Value  { return doc.Call("getElementById", id) }
 func value(id string) string { return strings.TrimSpace(el(id).Get("value").String()) }
@@ -63,7 +68,10 @@ func connect() {
 				for _, ev := range timeline {
 					send(ws, []any{"REQ", "profile-" + ev.Pubkey, map[string]any{"kinds": []int{0}, "authors": []string{ev.Pubkey}, "limit": 1}})
 				}
-				send(ws, []any{"REQ", "reactions", map[string]any{"kinds": []int{7}, "limit": 100}})
+				if pubkey != "" {
+					subscribeFollows(ws)
+					subscribeReactions(ws)
+				}
 				if pubkey != "" {
 					send(ws, []any{"REQ", "emoji-set", map[string]any{"kinds": []int{30030}, "authors": []string{pubkey}, "#d": []string{"reaction-only"}}})
 				}
@@ -72,15 +80,33 @@ func connect() {
 			}))
 			ws.Set("onmessage", callback(func(_ js.Value, a []js.Value) any {
 				var msg []json.RawMessage
-				if json.Unmarshal([]byte(a[0].Get("data").String()), &msg) != nil || len(msg) < 3 {
+				if json.Unmarshal([]byte(a[0].Get("data").String()), &msg) != nil || len(msg) < 2 {
 					return nil
 				}
 				var typ string
 				json.Unmarshal(msg[0], &typ)
-				if typ == "EVENT" {
+				var sub string
+				json.Unmarshal(msg[1], &sub)
+				if typ == "EOSE" && sub == "follows" {
+					followEOSE[url] = true
+					renderTimeline()
+				}
+				if typ == "EVENT" && len(msg) >= 3 {
 					var ev Event
 					if json.Unmarshal(msg[2], &ev) != nil || !verifyEvent(ev) {
 						return nil
+					}
+					if ev.Kind == 3 && sub == "follows" && ev.Pubkey == pubkey && (!haveFollows || newer(ev, followEvent)) {
+						followEvent = ev
+						haveFollows = true
+						follows = following(ev.Tags)
+						timeline = nil
+						seen = map[string]bool{}
+						reactionGeneration++
+						for _, socket := range sockets {
+							subscribeReactions(socket)
+						}
+						renderTimeline()
 					}
 					if ev.Kind == 0 && validHex(ev.Pubkey, 64) {
 						old, ok := profiles[ev.Pubkey]
@@ -99,14 +125,14 @@ func connect() {
 							}
 						}
 					}
-					if ev.Kind == 7 && validHex(ev.ID, 64) && validHex(ev.Pubkey, 64) && !seen[ev.ID] {
+					if ev.Kind == 7 && sub == fmt.Sprintf("reactions-%d", reactionGeneration) && follows[ev.Pubkey] && validHex(ev.ID, 64) && validHex(ev.Pubkey, 64) && !seen[ev.ID] {
 						seen[ev.ID] = true
 						timeline = append(timeline, ev)
 						requestProfile(ev.Pubkey)
 						renderTimeline()
 					}
 				}
-				if typ == "OK" {
+				if typ == "OK" && len(msg) >= 3 {
 					var accepted bool
 					json.Unmarshal(msg[2], &accepted)
 					status(fmt.Sprintf("リレー応答 %s: 受理=%v", url, accepted))
@@ -116,6 +142,22 @@ func connect() {
 			ws.Set("onerror", callback(func(_ js.Value, _ []js.Value) any { status("接続エラー: " + url); return nil }))
 		}(u)
 	}
+}
+func subscribeFollows(ws js.Value) {
+	send(ws, []any{"REQ", "follows", map[string]any{"kinds": []int{3}, "authors": []string{pubkey}, "limit": 1}})
+}
+func subscribeReactions(ws js.Value) {
+	for i := 0; i < reactionGeneration; i++ {
+		send(ws, []any{"CLOSE", fmt.Sprintf("reactions-%d", i)})
+	}
+	if !haveFollows || len(follows) == 0 {
+		return
+	}
+	authors := make([]string, 0, len(follows))
+	for key := range follows {
+		authors = append(authors, key)
+	}
+	send(ws, []any{"REQ", fmt.Sprintf("reactions-%d", reactionGeneration), map[string]any{"kinds": []int{7}, "authors": authors, "limit": 100}})
 }
 func requestProfile(key string) {
 	if requestedProfiles[key] {
@@ -153,6 +195,20 @@ func target(ev Event) (string, string) {
 }
 func renderTimeline() {
 	el("feed").Set("textContent", "")
+	switch {
+	case pubkey == "":
+		text("feedState", "ログインするとフォロー中のリアクションを表示します。")
+	case !haveFollows && len(followEOSE) < len(relayURLs):
+		text("feedState", "フォロー一覧を取得中です。")
+	case !haveFollows:
+		text("feedState", "フォロー一覧を取得できませんでした。接続やリレーを確認してください。")
+	case len(follows) == 0:
+		text("feedState", "フォロー一覧は空です。")
+	case len(timeline) == 0:
+		text("feedState", "フォロー中のリアクションを待っています。")
+	default:
+		text("feedState", "")
+	}
 	for _, item := range buildTimeline(timeline) {
 		render(item.Event, item.Depth, item.MissingParent, item.Cycle)
 	}
@@ -257,8 +313,19 @@ func login() {
 			return
 		}
 		pubkey = p
+		haveFollows = false
+		follows = nil
+		followEvent = Event{}
+		followEOSE = map[string]bool{}
+		timeline = nil
+		seen = map[string]bool{}
+		reactionGeneration++
+		setTags = [][]string{{"d", "reaction-only"}}
+		setTime = 0
+		refreshSet()
 		text("account", "ログイン: "+p)
 		for _, ws := range sockets {
+			subscribeFollows(ws)
 			send(ws, []any{"REQ", "emoji-set", map[string]any{"kinds": []int{30030}, "authors": []string{pubkey}, "#d": []string{"reaction-only"}}})
 		}
 		status("ログインしました")
@@ -322,6 +389,7 @@ func main() {
 	listen("login", "click", func(_ js.Value, _ []js.Value) any { login(); return nil })
 	listen("register", "click", func(_ js.Value, _ []js.Value) any { registerSet(); return nil })
 	connect()
+	renderTimeline()
 	status("起動しました")
 	select {}
 }
