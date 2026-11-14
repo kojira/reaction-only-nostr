@@ -355,18 +355,39 @@ func renderAccount() {
 		}))
 	}
 }
-func login() {
-	n := js.Global().Get("nostr")
-	if n.IsUndefined() || n.IsNull() {
-		status("NIP-07拡張機能が必要です")
+func login(restore bool) {
+	loginGeneration++
+	generation := loginGeneration
+	saved := storedLogin()
+	if restore && saved == "" {
 		return
 	}
-	promise(n.Call("getPublicKey"), func(v js.Value) {
+	n := js.Global().Get("nostr")
+	if n.IsUndefined() || n.IsNull() {
+		if restore {
+			status("保存されたログインを復元できません。NIP-07拡張機能を確認してください")
+		} else {
+			status("NIP-07拡張機能が必要です")
+		}
+		return
+	}
+	p := n.Call("getPublicKey")
+	p.Call("then", callback(func(_ js.Value, a []js.Value) any {
+		if generation != loginGeneration {
+			return nil
+		}
+		v := a[0]
 		p := v.String()
 		if !validHex(p, 64) {
 			status("公開鍵が不正です")
-			return
+			return nil
 		}
+		if restore && p != saved {
+			clearStoredLogin()
+			status("拡張機能のアカウントが変わりました。ログインし直してください")
+			return nil
+		}
+		saveLogin(p)
 		pubkey = p
 		haveFollows = false
 		follows = nil
@@ -394,7 +415,13 @@ func login() {
 			send(ws, []any{"REQ", "emoji-set", map[string]any{"kinds": []int{30030}, "authors": []string{pubkey}, "#d": []string{"reaction-only"}}})
 		}
 		status("ログインしました")
-	})
+		return nil
+	})).Call("catch", callback(func(_ js.Value, _ []js.Value) any {
+		if generation == loginGeneration {
+			status("NIP-07へのアクセスが拒否されたか利用できません。ログインし直してください")
+		}
+		return nil
+	}))
 }
 func publishReaction(id, p, content, shortcode, url string) {
 	if pubkey == "" {
@@ -453,12 +480,18 @@ func main() {
 	loadDefaultEmojis()
 	listen("saveEmojis", "click", func(_ js.Value, _ []js.Value) any { saveDefaultEmojis(); return nil })
 	listen("connect", "click", func(_ js.Value, _ []js.Value) any { connect(); return nil })
-	listen("login", "click", func(_ js.Value, _ []js.Value) any { login(); return nil })
+	listen("login", "click", func(_ js.Value, _ []js.Value) any { login(false); return nil })
 	listen("register", "click", func(_ js.Value, _ []js.Value) any { registerSet(); return nil })
 	setupRecovery()
 	connect()
 	renderTimeline()
 	status("起動しました")
+	js.Global().Call("setTimeout", callback(func(_ js.Value, _ []js.Value) any {
+		if loginGeneration == 0 {
+			login(true)
+		}
+		return nil
+	}), 500)
 	select {}
 }
 
