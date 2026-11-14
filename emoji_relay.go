@@ -37,6 +37,9 @@ func handleEmojiEvent(ev Event, sub string) {
 				subscribeEmojiRef(ws, a)
 			}
 		}
+		if activePaletteRefresh != nil {
+			activePaletteRefresh()
+		}
 		return
 	}
 	if ev.Kind != 30030 || !strings.HasPrefix(sub, "em-") {
@@ -59,6 +62,9 @@ func handleEmojiEvent(ev Event, sub string) {
 	old, ok := emojiSets[a]
 	if !ok || newer(ev, old) {
 		emojiSets[a] = ev
+		if activePaletteRefresh != nil {
+			activePaletteRefresh()
+		}
 	}
 }
 func availableEmojiTags() [][]string {

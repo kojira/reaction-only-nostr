@@ -7,6 +7,8 @@ import (
 	"syscall/js"
 )
 
+var activePaletteRefresh func()
+
 var paletteGroups = map[string]string{
 	"顔":    "😀 😃 😄 😁 😆 😅 😂 🤣 😊 😇 🙂 🙃 😉 😌 😍 🥰 😘 😗 😙 😚 😋 😛 😜 🤪 😝 🤑 🤗 🤭 🤫 🤔 🤐 🤨 😐 😑 😶 😏 😒 🙄 😬 😮‍💨 🤥 😌 😔 😪 🤤 😴 😷 🤒 🤕 🤢 🤮 🤧 🥵 🥶 🥴 😵 🤯 🤠 🥳 🥸 😎 🤓 🧐 😕 😟 🙁 ☹️ 😮 😯 😲 😳 🥺 😦 😧 😨 😰 😥 😢 😭 😱 😖 😣 😞 😓 😩 😫 🥱 😤 😡 😠 🤬 😈 👿 💀 ☠️ 💩 🤡 👻 👽 🤖",
 	"手・人":  "👋 🤚 🖐️ ✋ 🖖 👌 🤌 🤏 ✌️ 🤞 🫰 🤟 🤘 🤙 👈 👉 👆 🖕 👇 ☝️ 👍 👎 ✊ 👊 🤛 🤜 👏 🙌 👐 🤲 🤝 🙏 ✍️ 💪 🫶 👀 👁️ 👄 🧠 🧑 👶 👧 👦 👩 👨 🧓 👮 🧑‍💻 🧑‍🎨 🧑‍🚀 💃 🕺 🏃 🚶 🧘",
@@ -35,6 +37,11 @@ func buildReactionActions(actions js.Value, ev Event) {
 	actions.Call("appendChild", choices)
 	var show func(string)
 	show = func(tab string) {
+		activePaletteRefresh = func() {
+			if !choices.Get("hidden").Bool() {
+				show(tab)
+			}
+		}
 		choices.Set("textContent", "")
 		tabs := doc.Call("createElement", "div")
 		tabs.Set("className", "emoji-tabs")
