@@ -2,7 +2,6 @@ package main
 
 import (
 	"reflect"
-	"unicode"
 )
 
 // Accept one emoji sequence, including modifiers, flags and joined emoji.
@@ -36,7 +35,6 @@ func validEmoji(s string) bool {
 			bases++
 			joined = false
 		default:
-			_ = unicode.IsSpace(c)
 			return false
 		}
 	}
