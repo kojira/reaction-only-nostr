@@ -10,21 +10,12 @@ import (
 	"time"
 )
 
-type Event struct {
-	ID        string     `json:"id"`
-	Pubkey    string     `json:"pubkey"`
-	CreatedAt int64      `json:"created_at"`
-	Kind      int        `json:"kind"`
-	Tags      [][]string `json:"tags"`
-	Content   string     `json:"content"`
-	Sig       string     `json:"sig"`
-}
-
 var doc = js.Global().Get("document")
 var callbacks []js.Func
 var sockets []js.Value
 var pubkey string
 var seen = map[string]bool{}
+var timeline []Event
 var setTags = [][]string{{"d", "reaction-only"}}
 var setTime int64
 
@@ -64,6 +55,9 @@ func connect() {
 			sockets = append(sockets, ws)
 			ws.Set("onopen", callback(func(_ js.Value, _ []js.Value) any {
 				send(ws, []any{"REQ", "reactions", map[string]any{"kinds": []int{7}, "limit": 100}})
+				if pubkey != "" {
+					send(ws, []any{"REQ", "emoji-set", map[string]any{"kinds": []int{30030}, "authors": []string{pubkey}, "#d": []string{"reaction-only"}}})
+				}
 				status("接続: " + url)
 				return nil
 			}))
@@ -76,7 +70,10 @@ func connect() {
 				json.Unmarshal(msg[0], &typ)
 				if typ == "EVENT" {
 					var ev Event
-					if json.Unmarshal(msg[2], &ev) == nil && ev.Kind == 30030 && ev.Pubkey == pubkey && ev.CreatedAt > setTime {
+					if json.Unmarshal(msg[2], &ev) != nil || !verifyEvent(ev) {
+						return nil
+					}
+					if ev.Kind == 30030 && ev.Pubkey == pubkey && ev.CreatedAt > setTime {
 						for _, t := range ev.Tags {
 							if len(t) > 1 && t[0] == "d" && t[1] == "reaction-only" {
 								setTime = ev.CreatedAt
@@ -88,7 +85,8 @@ func connect() {
 					}
 					if ev.Kind == 7 && validHex(ev.ID, 64) && validHex(ev.Pubkey, 64) && !seen[ev.ID] {
 						seen[ev.ID] = true
-						render(ev)
+						timeline = append(timeline, ev)
+						renderTimeline()
 					}
 				}
 				if typ == "OK" {
@@ -127,8 +125,24 @@ func target(ev Event) (string, string) {
 	}
 	return e, p
 }
-func render(ev Event) {
+func renderTimeline() {
+	el("feed").Set("textContent", "")
+	for _, item := range buildTimeline(timeline) {
+		render(item.Event, item.Depth, item.MissingParent, item.Cycle)
+	}
+}
+func render(ev Event, depth int, missing, cycle bool) {
 	card := doc.Call("createElement", "article")
+	card.Get("style").Set("marginLeft", fmt.Sprintf("%dem", min(depth, 8)))
+	if missing || cycle {
+		notice := doc.Call("createElement", "small")
+		if cycle {
+			notice.Set("textContent", "参照の循環を検出")
+		} else {
+			notice.Set("textContent", "親イベントは未取得")
+		}
+		card.Call("appendChild", notice)
+	}
 	line := doc.Call("createElement", "div")
 	line.Set("className", "reaction")
 	custom := false
@@ -169,7 +183,20 @@ func render(ev Event) {
 		return nil
 	}))
 	card.Call("appendChild", btn)
-	el("feed").Call("prepend", card)
+	normal := doc.Call("createElement", "button")
+	normal.Set("textContent", "❤️ を送る")
+	normal.Call("addEventListener", "click", callback(func(_ js.Value, _ []js.Value) any { publishReaction(ev.ID, ev.Pubkey, "❤️", "", ""); return nil }))
+	card.Call("appendChild", normal)
+	for _, t := range setTags {
+		if len(t) >= 3 && t[0] == "emoji" && strings.HasPrefix(t[2], "https://") {
+			tag := append([]string(nil), t...)
+			b := doc.Call("createElement", "button")
+			b.Set("textContent", ":"+tag[1]+": を送る")
+			b.Call("addEventListener", "click", callback(func(_ js.Value, _ []js.Value) any { publishReaction(ev.ID, ev.Pubkey, "", tag[1], tag[2]); return nil }))
+			card.Call("appendChild", b)
+		}
+	}
+	el("feed").Call("appendChild", card)
 }
 func login() {
 	n := js.Global().Get("nostr")
@@ -192,17 +219,17 @@ func login() {
 	})
 }
 func publish() {
+	publishReaction(value("targetEvent"), value("targetPubkey"), value("emoji"), value("shortcode"), value("emojiURL"))
+}
+func publishReaction(id, p, content, shortcode, url string) {
 	if pubkey == "" {
 		status("先にログインしてください")
 		return
 	}
-	id, p := value("targetEvent"), value("targetPubkey")
 	if !validHex(id, 64) || !validHex(p, 64) {
 		status("対象イベントIDと公開鍵は64桁の小文字hexで指定してください")
 		return
 	}
-	content := value("emoji")
-	shortcode, url := value("shortcode"), value("emojiURL")
 	tags := [][]string{{"e", id}, {"p", p}}
 	if shortcode != "" || url != "" {
 		if shortcode == "" || !strings.HasPrefix(url, "https://") {
@@ -258,6 +285,7 @@ func main() {
 }
 
 func refreshSet() {
+	defer renderTimeline()
 	box := el("emojiSet")
 	box.Set("textContent", "")
 	for _, t := range setTags {
