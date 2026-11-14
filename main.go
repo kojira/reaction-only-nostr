@@ -204,38 +204,30 @@ func render(ev Event, depth int, missing, cycle bool) {
 	card.Call("appendChild", avatar)
 	meta.Set("textContent", pinfo.Name+" · "+time.Unix(ev.CreatedAt, 0).Local().Format("2006-01-02 15:04:05"))
 	card.Call("appendChild", meta)
-	e, p := target(ev)
-	if validHex(e, 64) && validHex(p, 64) {
-		btn := doc.Call("createElement", "button")
-		btn.Set("textContent", "この対象にリアクション")
-		btn.Call("addEventListener", "click", callback(func(_ js.Value, _ []js.Value) any {
-			el("targetEvent").Set("value", e)
-			el("targetPubkey").Set("value", p)
-			return nil
-		}))
-		card.Call("appendChild", btn)
+	actions := doc.Call("createElement", "div")
+	actions.Set("className", "actions")
+	label := doc.Call("createElement", "span")
+	label.Set("textContent", "このリアクションに送る: ")
+	actions.Call("appendChild", label)
+	for _, emoji := range []string{"❤️", "👍", "😂", "🎉", "😮"} {
+		emoji := emoji
+		b := doc.Call("createElement", "button")
+		b.Set("textContent", emoji)
+		b.Set("title", "このリアクションに "+emoji+" を送る")
+		b.Call("addEventListener", "click", callback(func(_ js.Value, _ []js.Value) any { publishReaction(ev.ID, ev.Pubkey, emoji, "", ""); return nil }))
+		actions.Call("appendChild", b)
 	}
-	btn := doc.Call("createElement", "button")
-	btn.Set("textContent", "このリアクションに返信")
-	btn.Call("addEventListener", "click", callback(func(_ js.Value, _ []js.Value) any {
-		el("targetEvent").Set("value", ev.ID)
-		el("targetPubkey").Set("value", ev.Pubkey)
-		return nil
-	}))
-	card.Call("appendChild", btn)
-	normal := doc.Call("createElement", "button")
-	normal.Set("textContent", "❤️ を送る")
-	normal.Call("addEventListener", "click", callback(func(_ js.Value, _ []js.Value) any { publishReaction(ev.ID, ev.Pubkey, "❤️", "", ""); return nil }))
-	card.Call("appendChild", normal)
 	for _, t := range setTags {
-		if len(t) >= 3 && t[0] == "emoji" && strings.HasPrefix(t[2], "https://") {
+		if len(t) >= 3 && t[0] == "emoji" && safeHTTPS(t[2]) {
 			tag := append([]string(nil), t...)
 			b := doc.Call("createElement", "button")
-			b.Set("textContent", ":"+tag[1]+": を送る")
+			b.Set("textContent", ":"+tag[1]+":")
+			b.Set("title", "このリアクションに :"+tag[1]+": を送る")
 			b.Call("addEventListener", "click", callback(func(_ js.Value, _ []js.Value) any { publishReaction(ev.ID, ev.Pubkey, "", tag[1], tag[2]); return nil }))
-			card.Call("appendChild", b)
+			actions.Call("appendChild", b)
 		}
 	}
+	card.Call("appendChild", actions)
 	el("feed").Call("appendChild", card)
 }
 func login() {
@@ -272,7 +264,7 @@ func publishReaction(id, p, content, shortcode, url string) {
 	}
 	tags := [][]string{{"e", id}, {"p", p}}
 	if shortcode != "" || url != "" {
-		if shortcode == "" || !strings.HasPrefix(url, "https://") {
+		if shortcode == "" || !safeHTTPS(url) {
 			status("カスタム絵文字はショートコードとhttps URLが必要です")
 			return
 		}
@@ -285,8 +277,8 @@ func publishReaction(id, p, content, shortcode, url string) {
 		content = ":" + shortcode + ":"
 		tags = append(tags, []string{"emoji", shortcode, url})
 	}
-	if content == "" {
-		status("絵文字を入力してください")
+	if shortcode == "" && !validEmoji(content) {
+		status("通常リアクションには絵文字を1つ入力してください")
 		return
 	}
 	count := 0
@@ -303,7 +295,7 @@ func publishReaction(id, p, content, shortcode, url string) {
 	promise(js.Global().Get("nostr").Call("signEvent", jsonJS(unsigned)), func(signed js.Value) {
 		var ev Event
 		raw := js.Global().Get("JSON").Call("stringify", signed).String()
-		if json.Unmarshal([]byte(raw), &ev) != nil || ev.Pubkey != pubkey || ev.Kind != 7 || !validHex(ev.ID, 64) || !validHex(ev.Sig, 128) {
+		if json.Unmarshal([]byte(raw), &ev) != nil || ev.Pubkey != pubkey || ev.Kind != 7 || ev.CreatedAt != unsigned["created_at"] || ev.Content != content || !sameTags(ev.Tags, tags) || !verifyEvent(ev) {
 			status("署名結果が不正です")
 			return
 		}
@@ -344,7 +336,7 @@ func refreshSet() {
 }
 func registerSet() {
 	code, url := value("shortcode"), value("emojiURL")
-	if pubkey == "" || code == "" || !strings.HasPrefix(url, "https://") {
+	if pubkey == "" || code == "" || !safeHTTPS(url) {
 		status("ログイン、ショートコード、https画像URLが必要です")
 		return
 	}
