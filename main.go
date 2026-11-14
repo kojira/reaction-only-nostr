@@ -244,13 +244,9 @@ func render(ev Event, depth int, missing, cycle bool) {
 	card := doc.Call("createElement", "article")
 	card.Get("style").Set("marginLeft", fmt.Sprintf("%dem", min(depth, 8)))
 	card.Get("style").Call("setProperty", "--indent", fmt.Sprintf("%dem", min(depth, 8)))
-	if missing || cycle {
+	if cycle {
 		notice := doc.Call("createElement", "small")
-		if cycle {
-			notice.Set("textContent", "参照の循環を検出")
-		} else {
-			notice.Set("textContent", "親イベントは未取得")
-		}
+		notice.Set("textContent", "参照の循環を検出")
 		card.Call("appendChild", notice)
 	}
 	line := doc.Call("createElement", "div")
@@ -333,7 +329,9 @@ func renderAccount() {
 	}
 	p := parseProfile(profiles[pubkey].Content, pubkey)
 	text("accountName", p.Name)
-	text("accountKey", pubkey)
+	if p.Name == pubkey || p.Name == pubkey[:12] {
+		text("accountName", "プロフィール取得中")
+	}
 	avatar := el("accountAvatar")
 	avatar.Set("textContent", "👤")
 	if p.Picture != "" {

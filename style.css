@@ -10,3 +10,5 @@ article{padding:1rem;margin:.75rem 0;background:#f3edf7;border-radius:20px;min-w
 
 button[hidden]{display:none}
 .settings{background:#fff;border-radius:24px;padding:1rem 1.5rem;margin:1rem 0;box-shadow:0 1px 3px #1d1b201c}.settings .relay-settings{box-shadow:none;background:#f7f2fa;border-radius:16px;padding:1rem}.settings>summary{font-size:1.1rem}
+
+.account .avatar{flex:0 0 2.5em;aspect-ratio:1}
