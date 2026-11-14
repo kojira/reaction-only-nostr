@@ -158,6 +158,7 @@ func connect() {
 				if generation == connectionGeneration {
 					followDone[url] = true
 					renderTimeline()
+					scheduleReconnect()
 				}
 				return nil
 			}))
@@ -448,6 +449,7 @@ func main() {
 	listen("connect", "click", func(_ js.Value, _ []js.Value) any { connect(); return nil })
 	listen("login", "click", func(_ js.Value, _ []js.Value) any { login(); return nil })
 	listen("register", "click", func(_ js.Value, _ []js.Value) any { registerSet(); return nil })
+	setupRecovery()
 	connect()
 	renderTimeline()
 	status("起動しました")
