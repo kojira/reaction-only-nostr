@@ -306,7 +306,7 @@ func publishReaction(id, p, content, shortcode, url string) {
 	promise(js.Global().Get("nostr").Call("signEvent", jsonJS(unsigned)), func(signed js.Value) {
 		var ev Event
 		raw := js.Global().Get("JSON").Call("stringify", signed).String()
-		if json.Unmarshal([]byte(raw), &ev) != nil || ev.Pubkey != pubkey || ev.Kind != 7 || ev.CreatedAt != unsigned["created_at"] || ev.Content != content || !sameTags(ev.Tags, tags) || !verifyEvent(ev) {
+		if json.Unmarshal([]byte(raw), &ev) != nil || ev.Pubkey != pubkey || ev.Kind != 7 || ev.CreatedAt != unsigned["created_at"].(int64) || ev.Content != content || !sameTags(ev.Tags, tags) || !verifyEvent(ev) {
 			status("署名結果が不正です")
 			return
 		}
