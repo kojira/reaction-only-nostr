@@ -7,6 +7,8 @@ import (
 	"syscall/js"
 )
 
+var expandedParents = map[string]bool{}
+
 // Show one parent at a time; expanding a reaction lets users follow the chain.
 func renderParent(card js.Value, ev Event) {
 	id := reactionParent(ev)
@@ -34,15 +36,19 @@ func renderParent(card js.Value, ev Event) {
 		content.Set("textContent", parent.Content)
 		box.Call("appendChild", content)
 		if parent.Kind == 7 && reactionParent(parent) != "" {
-			button := doc.Call("createElement", "button")
-			button.Set("textContent", "さらに参照先を見る")
-			button.Call("addEventListener", "click", callback(func(_ js.Value, _ []js.Value) any {
-				button.Call("remove")
-				requestParent(reactionParent(parent))
+			if expandedParents[id] {
 				renderParent(box, parent)
-				return nil
-			}))
-			box.Call("appendChild", button)
+			} else {
+				button := doc.Call("createElement", "button")
+				button.Set("textContent", "さらに参照先を見る")
+				button.Call("addEventListener", "click", callback(func(_ js.Value, _ []js.Value) any {
+					expandedParents[id] = true
+					requestParent(reactionParent(parent))
+					renderTimeline()
+					return nil
+				}))
+				box.Call("appendChild", button)
+			}
 		}
 	}
 	card.Call("appendChild", box)
