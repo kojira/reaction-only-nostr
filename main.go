@@ -18,6 +18,8 @@ var seen = map[string]bool{}
 var timeline []Event
 var setTags = [][]string{{"d", "reaction-only"}}
 var setTime int64
+var profiles = map[string]Event{}
+var requestedProfiles = map[string]bool{}
 
 func el(id string) js.Value  { return doc.Call("getElementById", id) }
 func value(id string) string { return strings.TrimSpace(el(id).Get("value").String()) }
@@ -49,11 +51,18 @@ func connect() {
 		s.Call("close")
 	}
 	sockets = nil
+	requestedProfiles = map[string]bool{}
 	for _, u := range relayURLs {
 		func(url string) {
 			ws := js.Global().Get("WebSocket").New(url)
 			sockets = append(sockets, ws)
 			ws.Set("onopen", callback(func(_ js.Value, _ []js.Value) any {
+				for key := range profiles {
+					send(ws, []any{"REQ", "profile-" + key, map[string]any{"kinds": []int{0}, "authors": []string{key}, "limit": 1}})
+				}
+				for _, ev := range timeline {
+					send(ws, []any{"REQ", "profile-" + ev.Pubkey, map[string]any{"kinds": []int{0}, "authors": []string{ev.Pubkey}, "limit": 1}})
+				}
 				send(ws, []any{"REQ", "reactions", map[string]any{"kinds": []int{7}, "limit": 100}})
 				if pubkey != "" {
 					send(ws, []any{"REQ", "emoji-set", map[string]any{"kinds": []int{30030}, "authors": []string{pubkey}, "#d": []string{"reaction-only"}}})
@@ -73,6 +82,13 @@ func connect() {
 					if json.Unmarshal(msg[2], &ev) != nil || !verifyEvent(ev) {
 						return nil
 					}
+					if ev.Kind == 0 && validHex(ev.Pubkey, 64) {
+						old, ok := profiles[ev.Pubkey]
+						if !ok || ev.CreatedAt > old.CreatedAt || ev.CreatedAt == old.CreatedAt && ev.ID < old.ID {
+							profiles[ev.Pubkey] = ev
+							renderTimeline()
+						}
+					}
 					if ev.Kind == 30030 && ev.Pubkey == pubkey && ev.CreatedAt > setTime {
 						for _, t := range ev.Tags {
 							if len(t) > 1 && t[0] == "d" && t[1] == "reaction-only" {
@@ -86,6 +102,7 @@ func connect() {
 					if ev.Kind == 7 && validHex(ev.ID, 64) && validHex(ev.Pubkey, 64) && !seen[ev.ID] {
 						seen[ev.ID] = true
 						timeline = append(timeline, ev)
+						requestProfile(ev.Pubkey)
 						renderTimeline()
 					}
 				}
@@ -98,6 +115,15 @@ func connect() {
 			}))
 			ws.Set("onerror", callback(func(_ js.Value, _ []js.Value) any { status("接続エラー: " + url); return nil }))
 		}(u)
+	}
+}
+func requestProfile(key string) {
+	if requestedProfiles[key] {
+		return
+	}
+	requestedProfiles[key] = true
+	for _, ws := range sockets {
+		send(ws, []any{"REQ", "profile-" + key, map[string]any{"kinds": []int{0}, "authors": []string{key}, "limit": 1}})
 	}
 }
 func validHex(s string, n int) bool {
@@ -162,7 +188,21 @@ func render(ev Event, depth int, missing, cycle bool) {
 	}
 	card.Call("appendChild", line)
 	meta := doc.Call("createElement", "small")
-	meta.Set("textContent", ev.Pubkey[:12]+" · "+time.Unix(ev.CreatedAt, 0).Format("2006-01-02 15:04"))
+	pinfo := parseProfile(profiles[ev.Pubkey].Content, ev.Pubkey)
+	avatar := doc.Call("createElement", "span")
+	avatar.Set("className", "avatar")
+	avatar.Set("textContent", "👤")
+	if pinfo.Picture != "" {
+		img := doc.Call("createElement", "img")
+		img.Set("src", pinfo.Picture)
+		img.Set("alt", "")
+		img.Set("referrerPolicy", "no-referrer")
+		img.Set("onerror", callback(func(_ js.Value, _ []js.Value) any { img.Call("remove"); avatar.Set("textContent", "👤"); return nil }))
+		avatar.Set("textContent", "")
+		avatar.Call("appendChild", img)
+	}
+	card.Call("appendChild", avatar)
+	meta.Set("textContent", pinfo.Name+" · "+time.Unix(ev.CreatedAt, 0).Local().Format("2006-01-02 15:04:05"))
 	card.Call("appendChild", meta)
 	e, p := target(ev)
 	if validHex(e, 64) && validHex(p, 64) {
