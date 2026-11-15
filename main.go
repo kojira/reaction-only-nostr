@@ -299,12 +299,15 @@ func render(ev Event, depth int, missing, cycle bool) {
 	card.Call("appendChild", avatar)
 	meta.Set("textContent", pinfo.Name+" · "+time.Unix(ev.CreatedAt, 0).Local().Format("2006-01-02 15:04:05"))
 	card.Call("appendChild", meta)
-	card.Call("appendChild", line)
-	renderParent(card, ev)
+	row := doc.Call("createElement", "div")
+	row.Set("className", "reaction-row")
+	row.Call("appendChild", line)
 	actions := doc.Call("createElement", "div")
 	actions.Set("className", "actions")
 	buildReactionActions(actions, ev)
-	card.Call("appendChild", actions)
+	row.Call("appendChild", actions)
+	card.Call("appendChild", row)
+	renderParent(card, ev)
 	el("feed").Call("appendChild", card)
 }
 func renderAccount() {
