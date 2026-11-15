@@ -461,8 +461,8 @@ func publishReaction(id, p, content, shortcode, url string) {
 }
 func signedToMap(s string) any { var v any; json.Unmarshal([]byte(s), &v); return v }
 func main() {
-	loadDefaultEmojis()
-	listen("saveEmojis", "click", func(_ js.Value, _ []js.Value) any { saveDefaultEmojis(); return nil })
+	loadDefaultReaction()
+	listen("saveEmojis", "click", func(_ js.Value, _ []js.Value) any { saveDefaultReaction(); return nil })
 	listen("connect", "click", func(_ js.Value, _ []js.Value) any { connect(); return nil })
 	listen("login", "click", func(_ js.Value, _ []js.Value) any { login(false); return nil })
 	listen("register", "click", func(_ js.Value, _ []js.Value) any { registerSet(); return nil })

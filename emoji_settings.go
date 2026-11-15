@@ -8,61 +8,56 @@ import (
 	"syscall/js"
 )
 
+const reactionStorageKey = "reaction-only-default-reaction-v1"
 const emojiStorageKey = "reaction-only-default-emojis-v1"
 
-var defaultEmojis = initialDefaultEmojis()
+var selectedReaction = defaultReaction{Content: "❤️"}
 
-func loadDefaultEmojis() {
-	// Storage access may be blocked by browser privacy settings.
+func loadDefaultReaction() {
 	defer func() {
 		if recover() != nil {
 			text("emojiSettingsStatus", "保存データを読み込めませんでした")
 		}
-		el("defaultEmojis").Set("value", strings.Join(defaultEmojis, " "))
+		updateDefaultFields()
 	}()
-	stored := js.Global().Get("localStorage").Call("getItem", emojiStorageKey)
-	if stored.IsNull() {
-		return
+	storage := js.Global().Get("localStorage")
+	raw, old := "", ""
+	if v := storage.Call("getItem", reactionStorageKey); !v.IsNull() {
+		raw = v.String()
 	}
-	var values []string
-	if json.Unmarshal([]byte(stored.String()), &values) != nil || !validDefaultEmojis(values) {
-		text("emojiSettingsStatus", "保存データを読み込めませんでした")
-		return
+	if v := storage.Call("getItem", emojiStorageKey); !v.IsNull() {
+		old = v.String()
 	}
-	defaultEmojis = values
+	selectedReaction = chooseDefaultReaction(raw, old)
 }
-
-func validDefaultEmojis(values []string) bool {
-	if len(values) == 0 || len(values) > 50 {
-		return false
-	}
-	for _, value := range values {
-		if !validEmoji(value) {
-			return false
-		}
-	}
-	return true
+func updateDefaultFields() {
+	el("defaultReaction").Set("value", selectedReaction.Content)
+	el("defaultReactionURL").Set("value", selectedReaction.URL)
 }
-
-func saveDefaultEmojis() {
-	values := strings.Fields(el("defaultEmojis").Get("value").String())
-	if !validDefaultEmojis(values) {
-		text("emojiSettingsStatus", "絵文字を空白で区切って1〜50個入力してください")
+func saveDefaultReaction() {
+	value := strings.TrimSpace(el("defaultReaction").Get("value").String())
+	url := strings.TrimSpace(el("defaultReactionURL").Get("value").String())
+	r := defaultReaction{Content: value, URL: url}
+	if strings.HasPrefix(value, ":") && strings.HasSuffix(value, ":") && len(value) > 2 {
+		r.Code = value[1 : len(value)-1]
+	}
+	if !validDefaultReaction(r) {
+		text("emojiSettingsStatus", "通常絵文字を1つ、または :ショートコード: と画像のHTTPS URLを入力してください")
 		return
 	}
-	raw, _ := json.Marshal(values)
+	raw, _ := json.Marshal(r)
 	saved := false
 	func() {
 		defer func() { _ = recover() }()
-		js.Global().Get("localStorage").Call("setItem", emojiStorageKey, string(raw))
+		js.Global().Get("localStorage").Call("setItem", reactionStorageKey, string(raw))
 		saved = true
 	}()
 	if !saved {
 		text("emojiSettingsStatus", "保存できませんでした。ブラウザの設定を確認してください")
 		return
 	}
-	defaultEmojis = values
-	el("defaultEmojis").Set("value", strings.Join(values, " "))
+	selectedReaction = r
+	updateDefaultFields()
 	text("emojiSettingsStatus", "保存しました")
 	renderTimeline()
 }

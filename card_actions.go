@@ -19,10 +19,18 @@ var paletteGroups = map[string]string{
 
 func buildReactionActions(actions js.Value, ev Event) {
 	button := doc.Call("createElement", "button")
-	button.Set("textContent", defaultEmojis[0])
+	if selectedReaction.Code != "" {
+		img := doc.Call("createElement", "img")
+		img.Set("src", selectedReaction.URL)
+		img.Set("alt", selectedReaction.Content)
+		img.Set("className", "default-reaction-image")
+		button.Call("appendChild", img)
+	} else {
+		button.Set("textContent", selectedReaction.Content)
+	}
 	button.Set("ariaLabel", "デフォルトのリアクションを送る")
 	button.Call("addEventListener", "click", callback(func(_ js.Value, _ []js.Value) any {
-		publishReaction(ev.ID, ev.Pubkey, defaultEmojis[0], "", "")
+		publishReaction(ev.ID, ev.Pubkey, selectedReaction.Content, selectedReaction.Code, selectedReaction.URL)
 		return nil
 	}))
 	actions.Call("appendChild", button)

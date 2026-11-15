@@ -17,9 +17,11 @@
   </div>
   <aside id="menuPanel" class="settings" hidden aria-label="メニュー">
   <label for="fontSize">文字サイズ</label><select id="fontSize"><option value="extra-small">極小</option><option value="smaller">より小</option><option value="small">小</option><option value="medium">中</option><option value="large">大</option><option value="extra-large">特大</option></select>
-  <details><summary>よく使う絵文字</summary>
-    <label for="defaultEmojis">絵文字（空白区切り）</label>
-    <input id="defaultEmojis" autocomplete="off" placeholder="❤️ 👍 🎉 😮">
+  <details><summary>デフォルトリアクション</summary>
+    <label for="defaultReaction">絵文字または :ショートコード:</label>
+    <input id="defaultReaction" autocomplete="off" placeholder="❤️">
+    <label for="defaultReactionURL">カスタム絵文字の画像HTTPS URL</label>
+    <input id="defaultReactionURL" type="url" placeholder="https://example.com/emoji.png">
     <button id="saveEmojis" type="button">保存</button><p id="emojiSettingsStatus" role="status"></p>
   </details>
   <details class="relay-settings"><summary>リレー設定</summary><ul><li>wss://r.kojira.io</li><li>wss://x.kojira.io</li><li>wss://n.kojira.io</li></ul><button id="connect">接続</button></details>
